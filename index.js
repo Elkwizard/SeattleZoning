@@ -56,6 +56,10 @@ const loaded = new Promise(resolve => {
 });
 
 // zone detection
+function errorMessage(error) {
+	return `A ${error.constructor.name} occurred (${error.message})`;
+}
+
 function colorDistance(a, b) {
 	return Math.hypot(...a.map((v, i) => v - b[i]));
 }
@@ -141,7 +145,7 @@ function updateZone(x, y, locationType) {
 				updateZone(x, y, "current");
 			});
 		}, error => {
-			output.innerText = "An error occurred: " + error;
+			output.innerText = errorMessage(error);
 		}, {
 			enableHighAccuracy: true
 		});
