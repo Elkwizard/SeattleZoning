@@ -52,7 +52,7 @@ function colorDistance(a, b) {
 	return Math.hypot(...a.map((v, i) => v - b[i]));
 }
 
-function updateZone(x, y) {
+function updateZone(x, y, locationType) {
 	// draw circular marker
 	context.clearRect(0, 0, canvas.width, canvas.height);
 	context.fillStyle = "blue";
@@ -68,7 +68,7 @@ function updateZone(x, y) {
 	const py = Math.floor(y);
 	
 	if (px < 0 || py < 0 || px >= imageData.width || py >= imageData.height) {
-		output.innerText = `Your current location is outside the map`;
+		output.innerText = `Your ${locationType} location is outside the map`;
 	} else {
 		const index = (py * imageData.width + px) * 4;
 		const color = [
@@ -89,10 +89,10 @@ function updateZone(x, y) {
 		}
 
 		if (bestDist >= 62)
-			output.innerText = `Your current location does not have a specified zone`;
+			output.innerText = `Your ${locationType} location does not have a specified zone`;
 		else {
 			const [prefix, zone] = LEGEND_LABELS[bestIndex];
-			output.innerText = `Your current location is zoned ${prefix} `;
+			output.innerText = `Your ${locationType} location is zoned ${prefix} `;
 			const zoneElement = document.createElement("span");
 			zoneElement.className = "zone";
 			zoneElement.innerText = zone;
@@ -104,11 +104,10 @@ function updateZone(x, y) {
 
 { // hover zone detection
 	canvas.addEventListener("mousedown", event => {
-		console.log(1);
 		const bounds = canvas.getBoundingClientRect();
 		const x = (event.clientX - bounds.x) / bounds.width * imageData.width;
 		const y = (event.clientY - bounds.y) / bounds.height * imageData.height;
-		updateZone(x, y);
+		updateZone(x, y, "selected");
 	});
 }
 
@@ -135,7 +134,7 @@ function updateZone(x, y) {
 				// radius is negative because a decrease in y is an increase in latitude
 				const y = getCoord(latitude, -POLAR_RADIUS, REF_LATITUDE, REF_Y);
 
-				updateZone(x, y);
+				updateZone(x, y, "current");
 			});
 		}, error => {
 			output.innerText = "An error occurred: " + error;
