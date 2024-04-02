@@ -16,31 +16,39 @@ const LEGEND_LABELS = [
 ];
 
 const output = document.getElementById("zoneView");
+
 const canvas = document.getElementById("markers");
 const context = canvas.getContext("2d");
 
-let imageData = null;
+let sampleMap, mapWidth, mapHeight;
 const colors = [];
 const loaded = new Promise(resolve => {
 	const image = new Image();
 	image.addEventListener("load", () => {
 		canvas.width = image.width;
 		canvas.height = image.height;
-		context.drawImage(image, 0, 0);
-		imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-		context.clearRect(0, 0, canvas.width, canvas.height);
+
+		mapWidth = image.width;
+		mapHeight = image.height;
 		
+		const sampleCanvas = document.createElement("canvas");
+		const sampleContext = sampleCanvas.getContext("2d", {
+			willReadFrequently: true
+		});
+		sampleMap = (x, y) => {
+			sampleCanvas.width = 3;
+			sampleCanvas.height = 3;
+			sampleContext.drawImage(image, x - 1, y - 1, 3, 3, 0, 0, 3, 3);
+			const [r, g, b] = sampleContext.getImageData(1, 1, 1, 1).data;
+			return [r, g, b];
+		};
+
 		// read legend
-		for (let i = 0; i < LEGEND_LABELS.length; i++) {
-			const y = LEGEND_Y + LEGEND_INCREMENT * i;
-			const x = LEGEND_X;
-			const index = (y * imageData.width + x) * 4;
-			colors.push([
-				imageData.data[index + 0],
-				imageData.data[index + 1],
-				imageData.data[index + 2]
-			]);
-		}
+		for (let i = 0; i < LEGEND_LABELS.length; i++)
+			colors.push(sampleMap(
+				LEGEND_X,
+				LEGEND_Y + LEGEND_INCREMENT * i
+			));
 
 		resolve();
 	});
@@ -67,15 +75,10 @@ function updateZone(x, y, locationType) {
 	const px = Math.floor(x);
 	const py = Math.floor(y);
 	
-	if (px < 0 || py < 0 || px >= imageData.width || py >= imageData.height) {
+	if (px < 0 || py < 0 || px >= mapWidth || py >= mapHeight) {
 		output.innerText = `Your ${locationType} location is outside the map`;
 	} else {
-		const index = (py * imageData.width + px) * 4;
-		const color = [
-			imageData.data[index + 0],
-			imageData.data[index + 1],
-			imageData.data[index + 2]
-		];
+		const color = sampleMap(px, py);
 
 		let bestDist = Infinity;
 		let bestIndex = 0;
@@ -105,9 +108,10 @@ function updateZone(x, y, locationType) {
 { // hover zone detection
 	canvas.addEventListener("mousedown", event => {
 		const bounds = canvas.getBoundingClientRect();
-		const x = (event.clientX - bounds.x) / bounds.width * imageData.width;
-		const y = (event.clientY - bounds.y) / bounds.height * imageData.height;
-		updateZone(x, y, "selected");
+		const x = (event.clientX - bounds.x) / bounds.width * mapWidth;
+		const y = (event.clientY - bounds.y) / bounds.height * mapHeight;
+		output.innerText = "Loading...";
+		loaded.then(() => updateZone(x, y, "selected"));
 	});
 }
 
