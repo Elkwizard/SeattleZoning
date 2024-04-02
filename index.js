@@ -88,8 +88,6 @@ function updateZone(x, y) {
 			}
 		}
 
-		console.log(color, colors, bestIndex);
-
 		if (bestDist >= 62)
 			output.innerText = `Your current location does not have a specified zone`;
 		else {
